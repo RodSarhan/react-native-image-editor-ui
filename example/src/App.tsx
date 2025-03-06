@@ -4,8 +4,9 @@ import {useCallback, useRef, useState} from 'react';
 import {ImageManipulator} from 'expo-image-manipulator';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 
-const sampleUri = 'https://salesbookingtest.infradigital.com.my/Profile/AppGetProfilePictureById?id=10286';
-// const sampleUri = 'https://www.w3schools.com/w3css/img_lights.jpg';
+const sampleUri = 'https://picsum.photos/id/7/300';
+// const sampleUri = 'https://picsum.photos/id/10/300/400';
+// const sampleUri = 'https://picsum.photos/id/100/400/300';
 
 export default function App() {
     const [savedImageUri, setSavedImageUri] = useState<string>();
