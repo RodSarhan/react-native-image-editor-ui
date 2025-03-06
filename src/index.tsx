@@ -1,19 +1,21 @@
 import {forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState} from 'react';
-import {
-    type LayoutRectangle,
-    Text,
-    TouchableOpacity,
-    View,
-    type ViewStyle,
-    Image,
-    type ImageURISource,
-} from 'react-native';
+import {type LayoutRectangle, Text, View, type ViewStyle, Image, type ImageURISource} from 'react-native';
 import {Gesture, GestureDetector, GestureHandlerRootView} from 'react-native-gesture-handler';
 import Animated, {clamp, useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 
 const CROP_PAN_GESTURE_HIT_SLOP = 20;
 const CROPPER_BORDER_WIDTH = 2;
 const CROPPER_MIN_SIZE = CROP_PAN_GESTURE_HIT_SLOP + CROPPER_BORDER_WIDTH * 2;
+export type EditResults = {
+    cropLeftOffset: number;
+    cropTopOffset: number;
+    cropWidth: number;
+    cropHeight: number;
+    isFlippedX: boolean;
+    isFlippedY: boolean;
+    rotation: number;
+    zoomLevel: number;
+};
 
 export type UseImageStateOptions = {
     source: ImageURISource;
@@ -197,9 +199,10 @@ const useImageState = (options: UseImageStateOptions) => {
     return state;
 };
 
-type ImageManipulationViewProps = {style?: ViewStyle; source: ImageURISource; onSave: (uri: string) => void};
-export const ImageManipulationView: React.FC<ImageManipulationViewProps> = (props) => {
-    const {style, source, onSave} = props;
+type ImageManipulationViewProps = {style?: ViewStyle; source: ImageURISource};
+
+export const ImageManipulationView = forwardRef<ImageManipulationMethods, ImageManipulationViewProps>((props, ref) => {
+    const {style, source} = props;
     const imageState = useImageState({source: source, maxRetries: 10});
 
     if (imageState.isLoading) {
@@ -225,92 +228,52 @@ export const ImageManipulationView: React.FC<ImageManipulationViewProps> = (prop
                 imageFileAspectRatio={imageState.aspectRatio}
                 imageFileWidth={imageState.width}
                 imageFileHeight={imageState.height}
-                onSave={onSave}
+                ref={ref}
             />
         </View>
     );
-};
+});
 
 type ImageManipulationCanvasProps = {
     source: ImageURISource;
     imageFileAspectRatio: number;
     imageFileWidth: number;
     imageFileHeight: number;
-    onSave: (uri: string) => void;
 };
 
-const ImageManipulationCanvas: React.FC<ImageManipulationCanvasProps> = (props) => {
-    const {source, imageFileAspectRatio, imageFileWidth, imageFileHeight, onSave} = props;
+const ImageManipulationCanvas = forwardRef<ImageManipulationMethods, ImageManipulationCanvasProps>((props, ref) => {
+    const {source, imageFileAspectRatio, imageFileWidth, imageFileHeight} = props;
     const [canvasLayout, setCanvasLayout] = useState<LayoutRectangle | undefined>();
-    const imageManipulationRef = useRef<ImageManipulationMethods>(null);
-
-    const onPressReset = useCallback(() => {
-        imageManipulationRef.current?.reset();
-    }, []);
-    const onFlipX = useCallback(() => {
-        imageManipulationRef.current?.flipX();
-    }, []);
-    const onFlipY = useCallback(() => {
-        imageManipulationRef.current?.flipY();
-    }, []);
-    const onPressRotateRight = useCallback(() => {
-        imageManipulationRef.current?.rotateRight();
-    }, []);
-    const onPressSave = useCallback(() => {
-        imageManipulationRef.current?.save();
-    }, []);
 
     return (
-        <>
-            <View style={{flexDirection: 'row', alignItems: 'center', padding: 10, gap: 10}}>
-                <TouchableOpacity onPress={onPressReset}>
-                    <Text>Reset</Text>
-                </TouchableOpacity>
-                <View style={{flexDirection: 'row', alignItems: 'center', gap: 10, marginStart: 'auto'}}>
-                    <TouchableOpacity onPress={onFlipX}>
-                        <Text>Flip X</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={onFlipY}>
-                        <Text>Flip Y</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={onPressRotateRight}>
-                        <Text>Rotate</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={onPressSave}>
-                        <Text>Save</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-            <GestureHandlerRootView
-                style={{flex: 1, width: '100%', overflow: 'hidden', backgroundColor: '#222222'}}
-                onLayout={(event) => {
-                    setCanvasLayout(event.nativeEvent.layout);
-                }}
-            >
-                {!!canvasLayout && (
-                    <ImageManipluationInner
-                        canvasHeight={canvasLayout.height}
-                        canvasWidth={canvasLayout.width}
-                        imageFileAspectRatio={imageFileAspectRatio}
-                        imageFileHeight={imageFileHeight}
-                        imageFileWidth={imageFileWidth}
-                        source={source}
-                        key={`${canvasLayout.width}x${canvasLayout.height}x${imageFileWidth}x${imageFileHeight}`}
-                        ref={imageManipulationRef}
-                        onSave={onSave}
-                    />
-                )}
-            </GestureHandlerRootView>
-        </>
+        <GestureHandlerRootView
+            style={{flex: 1, width: '100%', overflow: 'hidden', backgroundColor: '#222222'}}
+            onLayout={(event) => {
+                setCanvasLayout(event.nativeEvent.layout);
+            }}
+        >
+            {!!canvasLayout && (
+                <ImageManipluationInner
+                    canvasHeight={canvasLayout.height}
+                    canvasWidth={canvasLayout.width}
+                    imageFileAspectRatio={imageFileAspectRatio}
+                    imageFileHeight={imageFileHeight}
+                    imageFileWidth={imageFileWidth}
+                    source={source}
+                    key={`${canvasLayout.width}x${canvasLayout.height}x${imageFileWidth}x${imageFileHeight}`}
+                    ref={ref}
+                />
+            )}
+        </GestureHandlerRootView>
     );
-};
+});
 
-type ImageManipulationMethods = {
+export type ImageManipulationMethods = {
     reset: () => void;
     flipX: () => void;
     flipY: () => void;
     rotateRight: () => void;
-    save: () => void;
+    save: () => Promise<EditResults | undefined>;
 };
 
 type ImageMinpulationViewProps = {
@@ -320,14 +283,13 @@ type ImageMinpulationViewProps = {
     imageFileHeight: number;
     canvasHeight: number;
     canvasWidth: number;
-    onSave: (uri: string) => void;
 };
 
 const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
     ImageManipulationMethods,
     ImageMinpulationViewProps
 > = (props, ref) => {
-    const {source, imageFileAspectRatio, canvasHeight, canvasWidth, onSave} = props;
+    const {source, imageFileAspectRatio, canvasHeight, canvasWidth, imageFileWidth, imageFileHeight} = props;
 
     const initialImageLayout = useMemo(() => {
         //contain image inside canvas and center it both horizontally and vertically
@@ -491,43 +453,46 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
         const cropperValues = cropperAnimatedValues.get();
         const imageValues = imageAnimatedValues.get();
         // check if cropper is inside image
-        if (
-            !source.uri
-            || cropperValues.left < imageValues.left
-            || cropperValues.top < imageValues.top
-            || cropperValues.left + cropperValues.width > imageValues.left + imageValues.width
-            || cropperValues.top + cropperValues.height > imageValues.top + imageValues.height
-        ) {
+        if (!source.uri) {
             return;
         }
-        // const context = ImageManipulator.manipulate(source.uri);
-        // const cropOffsetLeft =
-        //   cropperValues.left - imageValues.left;
-        // const cropOffsetTop =
-        //   cropperValues.top - imageValues.top;
-        // const relativeLeftOffset = cropOffsetLeft / imageValues.width;
-        // const relativeTopOffset = cropOffsetTop / imageValues.height;
-        // const relativeWidth =
-        //   cropperValues.width / imageValues.width;
-        // const relativeHeight =
-        //   cropperValues.height / imageValues.height;
+        const isFlippedX = imageValues.isFlippedX;
+        const isFlippedY = imageValues.isFlippedY;
+        const cropRotation = imageValues.rotation;
+        const cropZoomLevel = imageValues.zoomLevel;
 
-        // const fileOffsetX = relativeLeftOffset * imageFileWidth;
-        // const fileOffsetY = relativeTopOffset * imageFileHeight;
-        // const fileWidth = relativeWidth * imageFileWidth;
-        // const fileHeight = relativeHeight * imageFileHeight;
+        const widthAfterRotate = cropRotation % 180 === 0 ? imageFileWidth : imageFileHeight;
+        const heightAfterRotate = cropRotation % 180 === 0 ? imageFileHeight : imageFileWidth;
 
-        // context.crop({
-        //   originX: fileOffsetX,
-        //   originY: fileOffsetY,
-        //   width: fileWidth,
-        //   height: fileHeight,
-        // });
-        // const image = await context.renderAsync();
-        // const result = await image.saveAsync({ format: SaveFormat.JPEG });
-        // imageModal.show({ uri: result.uri });
-        onSave(source.uri);
-    }, [cropperAnimatedValues, imageAnimatedValues, source.uri, onSave]);
+        const imageViewWidthAfterRotate = cropRotation % 180 === 0 ? imageValues.width : imageValues.height;
+        const imageViewHeightAfterRotate = cropRotation % 180 === 0 ? imageValues.height : imageValues.width;
+
+        const cropperWidth = cropperValues.width;
+        const cropperHeight = cropperValues.height;
+        const cropperLeft = cropperValues.left;
+        const cropperTop = cropperValues.top;
+
+        const cropperWidthToImageViewWidthRatio = cropperWidth / imageViewWidthAfterRotate;
+        const cropperHeightToImageViewHeightRatio = cropperHeight / imageViewHeightAfterRotate;
+        const cropperLeftToImageViewWidthRatio = cropperLeft / imageViewWidthAfterRotate;
+        const cropperTopToImageViewHeightRatio = cropperTop / imageViewHeightAfterRotate;
+
+        const cropLeftOffset = cropperLeftToImageViewWidthRatio * widthAfterRotate;
+        const cropTopOffset = cropperTopToImageViewHeightRatio * heightAfterRotate;
+        const cropWidth = cropperWidthToImageViewWidthRatio * widthAfterRotate;
+        const cropHeight = cropperHeightToImageViewHeightRatio * heightAfterRotate;
+
+        return {
+            cropLeftOffset,
+            cropTopOffset,
+            cropWidth,
+            cropHeight,
+            isFlippedX,
+            isFlippedY,
+            rotation: cropRotation,
+            zoomLevel: cropZoomLevel,
+        };
+    }, [cropperAnimatedValues, imageAnimatedValues, source.uri, imageFileWidth, imageFileHeight]);
 
     useImperativeHandle(
         ref,

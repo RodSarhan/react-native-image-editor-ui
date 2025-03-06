@@ -2263,7 +2263,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@expo/vector-icons@npm:^14.0.0":
+"@expo/vector-icons@npm:^14.0.0, @expo/vector-icons@npm:^14.0.2":
   version: 14.0.4
   resolution: "@expo/vector-icons@npm:14.0.4"
   dependencies:
@@ -6576,6 +6576,26 @@ __metadata:
     expo: "*"
     react: "*"
   checksum: 36fa98d333c97a9a309f0ffa45827616167162caaaca6873f04d6e3d658c669da9e894fadd582b9bcc569f3b5b2043553ca204e4333d7496ad2e5843f0373b09
+  languageName: node
+  linkType: hard
+
+"expo-image-loader@npm:~5.0.0":
+  version: 5.0.0
+  resolution: "expo-image-loader@npm:5.0.0"
+  peerDependencies:
+    expo: "*"
+  checksum: 7741b4b926124a1f85e51b0b8c8c9adc37fccf0654eaa0e715cb55cffc716bdc149c0421120f9bec69a69643d3328ec8562899b4aa37a0fdcecfb6fe3cf6f985
+  languageName: node
+  linkType: hard
+
+"expo-image-manipulator@npm:~13.0.6":
+  version: 13.0.6
+  resolution: "expo-image-manipulator@npm:13.0.6"
+  dependencies:
+    expo-image-loader: ~5.0.0
+  peerDependencies:
+    expo: "*"
+  checksum: 5e2c9e0e7f1a57f5aa24429854956db97d38b83e90fba6d6f3c4801dec087222f4845332a3e974bdef93acf6b378a8dff45fd7ba9b47fcbc5291e368a1712742
   languageName: node
   linkType: hard
 
@@ -11829,7 +11849,9 @@ __metadata:
   dependencies:
     "@babel/core": ^7.20.0
     "@expo/metro-runtime": ~4.0.1
+    "@expo/vector-icons": ^14.0.2
     expo: ~52.0.37
+    expo-image-manipulator: ~13.0.6
     expo-status-bar: ~2.0.1
     react: 18.3.1
     react-dom: 18.3.1
