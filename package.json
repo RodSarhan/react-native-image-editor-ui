@@ -80,6 +80,8 @@
     "react": "18.3.1",
     "react-native": "0.76.7",
     "react-native-builder-bob": "^0.37.0",
+    "react-native-gesture-handler": "~2.20.2",
+    "react-native-reanimated": "~3.16.1",
     "release-it": "^17.10.0",
     "typescript": "^5.2.2"
   },
@@ -88,7 +90,9 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "react-native-gesture-handler": ">=2.0.0",
+    "react-native-reanimated": ">=3.0.0"
   },
   "workspaces": [
     "example"
@@ -131,14 +135,19 @@
     ],
     "rules": {
       "react/react-in-jsx-scope": "off",
+      "react-native/no-inline-styles": "off",
       "prettier/prettier": [
-        "error",
+        "warn",
         {
+          "bracketSpacing": false,
+          "trailingComma": "all",
+          "tabWidth": 4,
+          "printWidth": 120,
+          "jsxSingleQuote": true,
+          "experimentalOperatorPosition": "start",
+          "objectWrap": "collapse",
           "quoteProps": "consistent",
-          "singleQuote": true,
-          "tabWidth": 2,
-          "trailingComma": "es5",
-          "useTabs": false
+          "singleQuote": true
         }
       ]
     }
@@ -148,11 +157,15 @@
     "lib/"
   ],
   "prettier": {
+    "bracketSpacing": false,
+    "trailingComma": "all",
+    "tabWidth": 4,
+    "printWidth": 120,
+    "jsxSingleQuote": true,
+    "experimentalOperatorPosition": "start",
+    "objectWrap": "collapse",
     "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
+    "singleQuote": true
   },
   "react-native-builder-bob": {
     "source": "src",
