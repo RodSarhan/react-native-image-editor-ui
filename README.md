@@ -27,7 +27,8 @@ const App = () => {
     const onPressSave = useCallback(async () => {
         const editResults = await imageManipulationRef.current?.save();
         if (!editResults) return;
-        // You can use any other library, but the order of transformations should follow the order stated here
+        // You can use any other library
+        // The order of transformations matters and follow this
         // Flip -> Rotate -> Crop
         const context = ImageManipulator.manipulate(sampleUri);
         if (editResults.isFlippedX) {
@@ -54,7 +55,11 @@ const App = () => {
     return (
         <View style={{flex: 1}}>
             {/* you can add your custom buttons */}
-            <ImageManipulationView style={{flex: 1}} source={{uri: sampleUri}} ref={imageManipulationRef} />
+            <ImageManipulationView 
+                style={{flex: 1}}
+                source={{uri: sampleUri}}
+                ref={imageManipulationRef}
+            />
         </View>
     )
 }
@@ -65,6 +70,7 @@ const App = () => {
 - [ ] Fix rotations for aspect ratios other than 1
 - [ ] Improve zooming functionality and moving the image around
 - [ ] Document the features and limitations
+- [ ] Publish to npm
 
 ## Contributing
 
