@@ -350,8 +350,8 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
     }, [canvasHeight, canvasWidth, imageFileAspectRatio]);
 
     const imageAnimatedValues = useSharedValue({
-        left: initialImageLayout.left,
-        top: initialImageLayout.top,
+        left: 0,
+        top: 0,
         width: initialImageLayout.width,
         height: initialImageLayout.height,
         isFlippedX: false,
@@ -361,8 +361,8 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
     });
 
     const cropperAnimatedValues = useSharedValue({
-        left: initialImageLayout.left,
-        top: initialImageLayout.top,
+        left: 0,
+        top: 0,
         width: initialImageLayout.width,
         height: initialImageLayout.height,
     });
@@ -376,6 +376,18 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
     const cropHeightStart = useSharedValue(0);
     const verticalEdgeBeingTouched = useSharedValue<'left' | 'right' | null>(null);
     const horizontalEdgeBeingTouched = useSharedValue<'top' | 'bottom' | null>(null);
+
+    const imageContainerStyle = useMemo(() => {
+        const result: ViewStyle = {
+            overflow: 'hidden',
+            position: 'absolute',
+            left: initialImageLayout.left,
+            top: initialImageLayout.top,
+            width: initialImageLayout.width,
+            height: initialImageLayout.height,
+        };
+        return result;
+    }, [initialImageLayout.height, initialImageLayout.left, initialImageLayout.top, initialImageLayout.width]);
 
     const imageAnimatedStyle = useAnimatedStyle(() => {
         const values = imageAnimatedValues.get();
@@ -458,8 +470,8 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
 
     const handleReset = useCallback(() => {
         imageAnimatedValues.set({
-            left: initialImageLayout.left,
-            top: initialImageLayout.top,
+            left: 0,
+            top: 0,
             width: initialImageLayout.width,
             height: initialImageLayout.height,
             isFlippedX: false,
@@ -468,8 +480,8 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
             zoomLevel: 1,
         });
         cropperAnimatedValues.set({
-            left: initialImageLayout.left,
-            top: initialImageLayout.top,
+            left: 0,
+            top: 0,
             width: initialImageLayout.width,
             height: initialImageLayout.height,
         });
@@ -535,7 +547,7 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
                 gestureScale.value = imageAnimatedValues.value.zoomLevel;
             })
             .onUpdate((event) => {
-                const newZoomLevel = clamp(gestureScale.value * event.scale, 0.1, 2);
+                const newZoomLevel = clamp(gestureScale.value * event.scale, 1, 2);
                 imageAnimatedValues.modify((val) => {
                     val.zoomLevel = newZoomLevel;
                     return val;
@@ -555,20 +567,17 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
             .onUpdate((event) => {
                 const translationX = translationStartX.value + event.translationX;
                 const translationY = translationStartY.value + event.translationY;
-                const maxRight = initialImageLayout.left + initialImageLayout.width - cropperAnimatedValues.value.width;
-                const maxBottom =
-                    initialImageLayout.top + initialImageLayout.height - cropperAnimatedValues.value.height;
+                const maxRight = initialImageLayout.width - cropperAnimatedValues.value.width;
+                const maxBottom = initialImageLayout.height - cropperAnimatedValues.value.height;
                 cropperAnimatedValues.modify((val) => {
-                    val.left = clamp(translationX, initialImageLayout.left, maxRight);
-                    val.top = clamp(translationY, initialImageLayout.top, maxBottom);
+                    val.left = clamp(translationX, 0, maxRight);
+                    val.top = clamp(translationY, 0, maxBottom);
                     return val;
                 });
             });
     }, [
         cropperAnimatedValues,
         initialImageLayout.height,
-        initialImageLayout.left,
-        initialImageLayout.top,
         initialImageLayout.width,
         translationStartX,
         translationStartY,
@@ -621,7 +630,7 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
                     // Maximum movement allowed to the right
                     const maximumAllowedTranlsationX = cropWidthStart.value - CROPPER_MIN_SIZE;
                     // Maximum movement allowed to the left (negative)
-                    const minimumAllowedTranslationX = initialImageLayout.left - cropStartX.value;
+                    const minimumAllowedTranslationX = -cropStartX.value;
                     const totalTranslationX = clamp(
                         event.translationX,
                         minimumAllowedTranslationX,
@@ -639,7 +648,7 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
                 if (verticalEdgeBeingTouched.value === 'right') {
                     // Maximum movement allowed to the right
                     const maximumAllowedTranlsationX =
-                        initialImageLayout.left + initialImageLayout.width - (cropStartX.value + cropWidthStart.value);
+                        initialImageLayout.width - (cropStartX.value + cropWidthStart.value);
                     // Maximum movement allowed to the left (negative)
                     const minimumAllowedTranslationX = -cropWidthStart.value + CROPPER_MIN_SIZE;
                     const totalTranslationX = clamp(
@@ -657,7 +666,7 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
                     // Maximum movement allowed to the bottom
                     const maximumAllowedTranlsationY = cropHeightStart.value - CROPPER_MIN_SIZE;
                     // Maximum movement allowed to the top (negative)
-                    const minimumAllowedTranslationY = initialImageLayout.top - cropStartY.value;
+                    const minimumAllowedTranslationY = -cropStartY.value;
                     const totalTranslationY = clamp(
                         event.translationY,
                         minimumAllowedTranslationY,
@@ -675,7 +684,7 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
                 if (horizontalEdgeBeingTouched.value === 'bottom') {
                     // Maximum movement allowed to the bottom
                     const maximumAllowedTranlsationY =
-                        initialImageLayout.top + initialImageLayout.height - (cropStartY.value + cropHeightStart.value);
+                        initialImageLayout.height - (cropStartY.value + cropHeightStart.value);
                     // Maximum movement allowed to the top (negative)
                     const minimumAllowedTranslationY = -cropHeightStart.value + CROPPER_MIN_SIZE;
                     const totalTranslationY = clamp(
@@ -702,8 +711,6 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
         cropperAnimatedValues,
         horizontalEdgeBeingTouched,
         initialImageLayout.height,
-        initialImageLayout.left,
-        initialImageLayout.top,
         initialImageLayout.width,
         verticalEdgeBeingTouched,
     ]);
@@ -711,16 +718,18 @@ const ImageManipluationRenderFunction: React.ForwardRefRenderFunction<
     const composedPanGesture = Gesture.Race(cropGesture, panGesture);
     const composedGesture = Gesture.Simultaneous(pinchGesture, composedPanGesture);
     return (
-        <GestureDetector gesture={composedGesture}>
-            <View style={{flex: 1, width: '100%', overflow: 'hidden', backgroundColor: '#222222'}}>
-                <Animated.Image
-                    source={source}
-                    style={[{transformOrigin: 'center'}, imageAnimatedStyle]}
-                    resizeMode='contain'
-                />
-                <Animated.View style={cropperAnimatedStyle} />
-            </View>
-        </GestureDetector>
+        <View style={{flex: 1, width: '100%', overflow: 'hidden', backgroundColor: '#222222'}}>
+            <GestureDetector gesture={composedGesture}>
+                <View style={imageContainerStyle}>
+                    <Animated.Image
+                        source={source}
+                        style={[{transformOrigin: 'center'}, imageAnimatedStyle]}
+                        resizeMode='contain'
+                    />
+                    <Animated.View style={cropperAnimatedStyle} />
+                </View>
+            </GestureDetector>
+        </View>
     );
 };
 
